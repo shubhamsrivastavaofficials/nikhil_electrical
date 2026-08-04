@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: 'Chakra Petch', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+
+* {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #0A0E14;
+  color: #EDF1F7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+::selection {
+  background: #2F80FF;
+  color: #ffffff;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #0A0E14;
+}
+::-webkit-scrollbar-thumb {
+  background: #1A222C;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2F80FF;
+}
+
+.glass-panel {
+  background: rgba(18, 24, 31, 0.6);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.text-gradient-volt {
+  background: linear-gradient(90deg, #7CC2FF 0%, #2F80FF 60%, #124BB3 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.text-gradient-copper {
+  background: linear-gradient(90deg, #F0A85C 0%, #D9822B 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.terminal-line::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #F5B400;
+  margin-right: 8px;
+  box-shadow: 0 0 8px #F5B400;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #2F80FF;
+  outline-offset: 2px;
+}

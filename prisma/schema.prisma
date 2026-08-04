@@ -1,0 +1,94 @@
+// New Nikhil Electrical — Database Schema
+// Run `npx prisma db push` (dev) or `npx prisma migrate deploy` (prod) after setting DATABASE_URL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Admin ----------
+model Admin {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("ADMIN") // ADMIN | SUPER_ADMIN
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ---------- Gallery ----------
+model GalleryImage {
+  id          String   @id @default(cuid())
+  title       String
+  category    String   @default("Workshop") // Workshop | Motor Binding | Wiring | Products | Store
+  imageUrl    String
+  altText     String
+  isFeatured  Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+}
+
+// ---------- Services ----------
+model Service {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  description String
+  icon        String   @default("Zap") // lucide-react icon name
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ---------- Products (Wholesale catalogue) ----------
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  category    String   // Wires | Switches | MCB | LED Lights | Fans | Accessories
+  description String
+  priceNote   String   @default("Call for wholesale price")
+  imageUrl    String?
+  inStock     Boolean  @default(true)
+  isFeatured  Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+}
+
+// ---------- Testimonials ----------
+model Testimonial {
+  id         String   @id @default(cuid())
+  name       String
+  location   String   @default("Rae Bareli")
+  message    String
+  rating     Int      @default(5)
+  isApproved Boolean  @default(true)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+}
+
+// ---------- Enquiries (Contact form submissions) ----------
+model Enquiry {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String
+  message   String
+  source    String   @default("website") // website | whatsapp-cta
+  status    String   @default("NEW") // NEW | CONTACTED | CLOSED
+  createdAt DateTime @default(now())
+
+  @@index([status])
+}
