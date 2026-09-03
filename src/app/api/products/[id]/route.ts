@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { imagePathSchema } from '@/lib/validation';
 import { requireAdmin } from '@/lib/api-auth';
 import { slugify } from '@/lib/utils';
+import { withDb, dbUnavailable, isNotFoundError } from '@/lib/db-guard';
 
 const updateSchema = z.object({
   name: z.string().min(1).max(120).optional(),
@@ -28,19 +29,22 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 
   const { imageUrl, name, ...rest } = parsed.data;
-  try {
-    const product = await prisma.product.update({
+  const result = await withDb(() =>
+    prisma.product.update({
       where: { id },
       data: {
         ...rest,
         ...(name ? { name, slug: slugify(name) } : {}),
         ...(imageUrl !== undefined ? { imageUrl: imageUrl || null } : {}),
       },
-    });
-    return NextResponse.json({ product });
-  } catch {
-    return NextResponse.json({ error: 'Product not found.' }, { status: 404 });
+    })
+  );
+  if (!result.ok) {
+    return isNotFoundError(result.error)
+      ? NextResponse.json({ error: 'Product not found.' }, { status: 404 })
+      : dbUnavailable();
   }
+  return NextResponse.json({ product: result.data });
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -48,10 +52,11 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   if (response) return response;
 
   const { id } = await params;
-  try {
-    await prisma.product.delete({ where: { id } });
-    return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json({ error: 'Product not found.' }, { status: 404 });
+  const result = await withDb(() => prisma.product.delete({ where: { id } }));
+  if (!result.ok) {
+    return isNotFoundError(result.error)
+      ? NextResponse.json({ error: 'Product not found.' }, { status: 404 })
+      : dbUnavailable();
   }
+  return NextResponse.json({ success: true });
 }

@@ -26,11 +26,16 @@ export default function AdminServicesPage() {
   const [saving, setSaving] = useState(false);
 
   async function load() {
-    setLoading(true);
-    const res = await fetch('/api/services');
-    const data = await res.json();
-    setServices(data.services || []);
-    setLoading(false);
+    try {
+      const res = await fetch('/api/services');
+      if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
+      const data = await res.json();
+      setServices(data.services || []);
+    } catch {
+      toast.error('Could not load services. Please refresh and try again.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {

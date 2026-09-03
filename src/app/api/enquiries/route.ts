@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/api-auth';
+import { withDb, dbUnavailable } from '@/lib/db-guard';
 
 const createSchema = z.object({
   name: z.string().min(1).max(120),
@@ -34,8 +35,9 @@ export async function GET() {
   const { response } = await requireAdmin();
   if (response) return response;
 
-  const enquiries = await prisma.enquiry.findMany({ orderBy: { createdAt: 'desc' } });
-  return NextResponse.json({ enquiries });
+  const result = await withDb(() => prisma.enquiry.findMany({ orderBy: { createdAt: 'desc' } }));
+  if (!result.ok) return dbUnavailable();
+  return NextResponse.json({ enquiries: result.data });
 }
 
 export async function POST(req: NextRequest) {
@@ -50,6 +52,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const enquiry = await prisma.enquiry.create({ data: parsed.data });
-  return NextResponse.json({ enquiry }, { status: 201 });
+  const result = await withDb(() => prisma.enquiry.create({ data: parsed.data }));
+  if (!result.ok) return dbUnavailable();
+  return NextResponse.json({ enquiry: result.data }, { status: 201 });
 }

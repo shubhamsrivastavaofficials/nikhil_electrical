@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { verifyPassword, createSession } from '@/lib/auth';
+import { withDb, dbUnavailable } from '@/lib/db-guard';
 
 const schema = z.object({
   email: z.string().email(),
@@ -38,7 +39,11 @@ export async function POST(req: NextRequest) {
   }
 
   const { email, password } = parsed.data;
-  const admin = await prisma.admin.findUnique({ where: { email } });
+  const result = await withDb(() => prisma.admin.findUnique({ where: { email } }));
+  if (!result.ok) {
+    return dbUnavailable();
+  }
+  const admin = result.data;
 
   // Always compare against a hash to reduce timing side-channels even if admin not found
   const validHash = admin?.passwordHash || '$2a$12$invalidinvalidinvalidinvalidinvalidinva';

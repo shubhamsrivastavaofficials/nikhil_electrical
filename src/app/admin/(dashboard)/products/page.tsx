@@ -36,11 +36,16 @@ export default function AdminProductsPage() {
   const [saving, setSaving] = useState(false);
 
   async function load() {
-    setLoading(true);
-    const res = await fetch('/api/products');
-    const data = await res.json();
-    setProducts(data.products || []);
-    setLoading(false);
+    try {
+      const res = await fetch('/api/products');
+      if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
+      const data = await res.json();
+      setProducts(data.products || []);
+    } catch {
+      toast.error('Could not load products. Please refresh and try again.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {

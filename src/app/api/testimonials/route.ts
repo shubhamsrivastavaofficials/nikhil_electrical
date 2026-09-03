@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/api-auth';
+import { withDb, dbUnavailable } from '@/lib/db-guard';
 
 const createSchema = z.object({
   name: z.string().min(1).max(120),
@@ -13,8 +14,9 @@ const createSchema = z.object({
 });
 
 export async function GET() {
-  const testimonials = await prisma.testimonial.findMany({ orderBy: { sortOrder: 'asc' } });
-  return NextResponse.json({ testimonials });
+  const result = await withDb(() => prisma.testimonial.findMany({ orderBy: { sortOrder: 'asc' } }));
+  if (!result.ok) return dbUnavailable();
+  return NextResponse.json({ testimonials: result.data });
 }
 
 export async function POST(req: NextRequest) {
@@ -27,6 +29,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const testimonial = await prisma.testimonial.create({ data: parsed.data });
-  return NextResponse.json({ testimonial }, { status: 201 });
+  const result = await withDb(() => prisma.testimonial.create({ data: parsed.data }));
+  if (!result.ok) return dbUnavailable();
+  return NextResponse.json({ testimonial: result.data }, { status: 201 });
 }

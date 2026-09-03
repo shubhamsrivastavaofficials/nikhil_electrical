@@ -25,11 +25,16 @@ export default function AdminTestimonialsPage() {
   const [saving, setSaving] = useState(false);
 
   async function load() {
-    setLoading(true);
-    const res = await fetch('/api/testimonials');
-    const data = await res.json();
-    setItems(data.testimonials || []);
-    setLoading(false);
+    try {
+      const res = await fetch('/api/testimonials');
+      if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
+      const data = await res.json();
+      setItems(data.testimonials || []);
+    } catch {
+      toast.error('Could not load testimonials. Please refresh and try again.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {

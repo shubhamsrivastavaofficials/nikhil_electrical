@@ -1,13 +1,14 @@
 import Link from 'next/link';
 import { Inbox, Images, Wrench, PackageSearch, MessageSquareQuote, ArrowUpRight } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
+import { withDb } from '@/lib/db-guard';
 import StatCard from '@/components/admin/StatCard';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminOverviewPage() {
-  const [enquiryCount, newEnquiryCount, galleryCount, serviceCount, productCount, testimonialCount, recentEnquiries] =
-    await Promise.all([
+  const stats = await withDb(() =>
+    Promise.all([
       prisma.enquiry.count(),
       prisma.enquiry.count({ where: { status: 'NEW' } }),
       prisma.galleryImage.count(),
@@ -15,7 +16,26 @@ export default async function AdminOverviewPage() {
       prisma.product.count(),
       prisma.testimonial.count(),
       prisma.enquiry.findMany({ orderBy: { createdAt: 'desc' }, take: 5 }),
-    ]);
+    ])
+  );
+
+  if (!stats.ok) {
+    return (
+      <div>
+        <h1 className="font-display text-2xl font-semibold text-ink-100">Overview</h1>
+        <p className="mt-1 text-sm text-ink-500">Welcome back — here&apos;s what&apos;s happening.</p>
+        <div className="mt-7 rounded-2xl border border-safety-amber/25 bg-safety-amber/10 p-6">
+          <p className="font-medium text-safety-amber">Database temporarily unavailable.</p>
+          <p className="mt-1 text-sm text-ink-500">
+            Couldn&apos;t load your dashboard stats. Refresh in a moment and it should recover.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const [enquiryCount, newEnquiryCount, galleryCount, serviceCount, productCount, testimonialCount, recentEnquiries] =
+    stats.data;
 
   return (
     <div>
