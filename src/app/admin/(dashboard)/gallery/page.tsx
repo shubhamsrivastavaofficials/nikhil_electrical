@@ -29,11 +29,16 @@ export default function AdminGalleryPage() {
   const [saving, setSaving] = useState(false);
 
   async function load() {
-    setLoading(true);
-    const res = await fetch('/api/gallery');
-    const data = await res.json();
-    setImages(data.images || []);
-    setLoading(false);
+    try {
+      const res = await fetch('/api/gallery');
+      if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
+      const data = await res.json();
+      setImages(data.images || []);
+    } catch {
+      toast.error('Could not load gallery images. Please refresh and try again.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {

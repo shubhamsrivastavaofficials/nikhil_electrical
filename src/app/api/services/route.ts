@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { imagePathSchema } from '@/lib/validation';
 import { requireAdmin } from '@/lib/api-auth';
 import { slugify } from '@/lib/utils';
+import { withDb, dbUnavailable } from '@/lib/db-guard';
 
 const createSchema = z.object({
   title: z.string().min(1).max(120),
@@ -15,8 +16,9 @@ const createSchema = z.object({
 });
 
 export async function GET() {
-  const services = await prisma.service.findMany({ orderBy: { sortOrder: 'asc' } });
-  return NextResponse.json({ services });
+  const result = await withDb(() => prisma.service.findMany({ orderBy: { sortOrder: 'asc' } }));
+  if (!result.ok) return dbUnavailable();
+  return NextResponse.json({ services: result.data });
 }
 
 export async function POST(req: NextRequest) {
@@ -32,8 +34,9 @@ export async function POST(req: NextRequest) {
   const { imageUrl, ...rest } = parsed.data;
   const slug = slugify(rest.title);
 
-  const service = await prisma.service.create({
-    data: { ...rest, imageUrl: imageUrl || null, slug },
-  });
-  return NextResponse.json({ service }, { status: 201 });
+  const result = await withDb(() =>
+    prisma.service.create({ data: { ...rest, imageUrl: imageUrl || null, slug } })
+  );
+  if (!result.ok) return dbUnavailable();
+  return NextResponse.json({ service: result.data }, { status: 201 });
 }

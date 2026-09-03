@@ -26,11 +26,16 @@ export default function AdminEnquiriesPage() {
   const [filter, setFilter] = useState<'ALL' | Enquiry['status']>('ALL');
 
   async function load() {
-    setLoading(true);
-    const res = await fetch('/api/enquiries');
-    const data = await res.json();
-    setItems(data.enquiries || []);
-    setLoading(false);
+    try {
+      const res = await fetch('/api/enquiries');
+      if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
+      const data = await res.json();
+      setItems(data.enquiries || []);
+    } catch {
+      toast.error('Could not load enquiries. Please refresh and try again.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {

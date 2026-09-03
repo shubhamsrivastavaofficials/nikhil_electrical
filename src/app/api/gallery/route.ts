@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { imagePathSchema } from '@/lib/validation';
 import { requireAdmin } from '@/lib/api-auth';
+import { withDb, dbUnavailable } from '@/lib/db-guard';
 
 const createSchema = z.object({
   title: z.string().min(1).max(120),
@@ -14,8 +15,9 @@ const createSchema = z.object({
 });
 
 export async function GET() {
-  const images = await prisma.galleryImage.findMany({ orderBy: { sortOrder: 'asc' } });
-  return NextResponse.json({ images });
+  const result = await withDb(() => prisma.galleryImage.findMany({ orderBy: { sortOrder: 'asc' } }));
+  if (!result.ok) return dbUnavailable();
+  return NextResponse.json({ images: result.data });
 }
 
 export async function POST(req: NextRequest) {
@@ -28,6 +30,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const image = await prisma.galleryImage.create({ data: parsed.data });
-  return NextResponse.json({ image }, { status: 201 });
+  const result = await withDb(() => prisma.galleryImage.create({ data: parsed.data }));
+  if (!result.ok) return dbUnavailable();
+  return NextResponse.json({ image: result.data }, { status: 201 });
 }

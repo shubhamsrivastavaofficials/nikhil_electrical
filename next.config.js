@@ -8,9 +8,6 @@ const nextConfig = {
     ],
     formats: ['image/avif', 'image/webp'],
   },
-  eslint: {
-    ignoreDuringBuilds: false,
-  },
   async headers() {
     return [
       {
