@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { Plus, Pencil, Trash2, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
-import Modal from '@/components/admin/Modal';
-import ImageUploader from '@/components/admin/ImageUploader';
+import { safeFetchJson } from '@/lib/safe-fetch';
 
 type GalleryImage = {
   id: string;
@@ -30,12 +29,11 @@ export default function AdminGalleryPage() {
 
   async function load() {
     try {
-      const res = await fetch('/api/gallery');
-      if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
-      const data = await res.json();
+      const { ok, data } = await safeFetchJson('/api/gallery');
+      if (!ok) throw new Error(data.error || 'Failed to load');
       setImages(data.images || []);
-    } catch {
-      toast.error('Could not load gallery images. Please refresh and try again.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not load gallery images.');
     } finally {
       setLoading(false);
     }

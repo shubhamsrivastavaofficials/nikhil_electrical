@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, Power } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '@/components/admin/Modal';
+import { safeFetchJson } from '@/lib/safe-fetch';
 
 type Service = {
   id: string;
@@ -27,12 +28,11 @@ export default function AdminServicesPage() {
 
   async function load() {
     try {
-      const res = await fetch('/api/services');
-      if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
-      const data = await res.json();
+      const { ok, data } = await safeFetchJson('/api/services');
+      if (!ok) throw new Error(data.error || 'Failed to load');
       setServices(data.services || []);
-    } catch {
-      toast.error('Could not load services. Please refresh and try again.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not load services.');
     } finally {
       setLoading(false);
     }
@@ -63,39 +63,43 @@ export default function AdminServicesPage() {
     try {
       const url = editing ? `/api/services/${editing.id}` : '/api/services';
       const method = editing ? 'PUT' : 'POST';
-      const res = await fetch(url, {
+      const { ok, data } = await safeFetchJson(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
-      if (!res.ok) throw new Error();
+      if (!ok) throw new Error(data.error || 'Failed to save service');
       toast.success(editing ? 'Service updated' : 'Service added');
       setOpen(false);
       load();
-    } catch {
-      toast.error('Failed to save service.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to save service.');
     } finally {
       setSaving(false);
     }
   }
 
   async function toggleActive(s: Service) {
-    await fetch(`/api/services/${s.id}`, {
+    const { ok } = await safeFetchJson(`/api/services/${s.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isActive: !s.isActive }),
     });
-    load();
+    if (ok) {
+      load();
+    } else {
+      toast.error('Failed to toggle status.');
+    }
   }
 
   async function handleDelete(id: string) {
     if (!confirm('Delete this service?')) return;
-    const res = await fetch(`/api/services/${id}`, { method: 'DELETE' });
-    if (res.ok) {
+    const { ok, data } = await safeFetchJson(`/api/services/${id}`, { method: 'DELETE' });
+    if (ok) {
       toast.success('Deleted');
       load();
     } else {
-      toast.error('Failed to delete.');
+      toast.error(data.error || 'Failed to delete.');
     }
   }
 

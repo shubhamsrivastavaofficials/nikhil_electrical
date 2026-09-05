@@ -6,6 +6,8 @@ import { Zap, Loader2, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Toaster } from 'react-hot-toast';
 
+import { safeFetchJson } from '@/lib/safe-fetch';
+
 export default function AdminLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -16,20 +18,19 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch('/api/auth/login', {
+      const { ok, data } = await safeFetchJson('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-      const data = await res.json();
-      if (!res.ok) {
+      if (!ok) {
         toast.error(data.error || 'Login failed');
         return;
       }
       toast.success('Welcome back!');
       window.location.href = '/admin';
-    } catch {
-      toast.error('Something went wrong. Try again.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Something went wrong. Try again.');
     } finally {
       setLoading(false);
     }

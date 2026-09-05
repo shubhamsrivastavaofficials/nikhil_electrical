@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '@/components/admin/Modal';
+import { safeFetchJson } from '@/lib/safe-fetch';
 
 type Testimonial = {
   id: string;
@@ -26,12 +27,11 @@ export default function AdminTestimonialsPage() {
 
   async function load() {
     try {
-      const res = await fetch('/api/testimonials');
-      if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
-      const data = await res.json();
+      const { ok, data } = await safeFetchJson('/api/testimonials');
+      if (!ok) throw new Error(data.error || 'Failed to load');
       setItems(data.testimonials || []);
-    } catch {
-      toast.error('Could not load testimonials. Please refresh and try again.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not load testimonials.');
     } finally {
       setLoading(false);
     }
@@ -62,17 +62,17 @@ export default function AdminTestimonialsPage() {
     try {
       const url = editing ? `/api/testimonials/${editing.id}` : '/api/testimonials';
       const method = editing ? 'PUT' : 'POST';
-      const res = await fetch(url, {
+      const { ok, data } = await safeFetchJson(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
-      if (!res.ok) throw new Error();
+      if (!ok) throw new Error(data.error || 'Failed to save testimonial');
       toast.success(editing ? 'Testimonial updated' : 'Testimonial added');
       setOpen(false);
       load();
-    } catch {
-      toast.error('Failed to save testimonial.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to save testimonial.');
     } finally {
       setSaving(false);
     }
@@ -80,12 +80,12 @@ export default function AdminTestimonialsPage() {
 
   async function handleDelete(id: string) {
     if (!confirm('Delete this testimonial?')) return;
-    const res = await fetch(`/api/testimonials/${id}`, { method: 'DELETE' });
-    if (res.ok) {
+    const { ok, data } = await safeFetchJson(`/api/testimonials/${id}`, { method: 'DELETE' });
+    if (ok) {
       toast.success('Deleted');
       load();
     } else {
-      toast.error('Failed to delete.');
+      toast.error(data.error || 'Failed to delete.');
     }
   }
 

@@ -6,6 +6,7 @@ import { Plus, Pencil, Trash2, PackageX } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '@/components/admin/Modal';
 import ImageUploader from '@/components/admin/ImageUploader';
+import { safeFetchJson } from '@/lib/safe-fetch';
 
 type Product = {
   id: string;
@@ -37,12 +38,11 @@ export default function AdminProductsPage() {
 
   async function load() {
     try {
-      const res = await fetch('/api/products');
-      if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
-      const data = await res.json();
+      const { ok, data } = await safeFetchJson('/api/products');
+      if (!ok) throw new Error(data.error || 'Failed to load');
       setProducts(data.products || []);
-    } catch {
-      toast.error('Could not load products. Please refresh and try again.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not load products.');
     } finally {
       setLoading(false);
     }
@@ -73,17 +73,17 @@ export default function AdminProductsPage() {
     try {
       const url = editing ? `/api/products/${editing.id}` : '/api/products';
       const method = editing ? 'PUT' : 'POST';
-      const res = await fetch(url, {
+      const { ok, data } = await safeFetchJson(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
-      if (!res.ok) throw new Error();
+      if (!ok) throw new Error(data.error || 'Failed to save product');
       toast.success(editing ? 'Product updated' : 'Product added');
       setOpen(false);
       load();
-    } catch {
-      toast.error('Failed to save product.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to save product.');
     } finally {
       setSaving(false);
     }
@@ -91,12 +91,12 @@ export default function AdminProductsPage() {
 
   async function handleDelete(id: string) {
     if (!confirm('Delete this product?')) return;
-    const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
-    if (res.ok) {
+    const { ok, data } = await safeFetchJson(`/api/products/${id}`, { method: 'DELETE' });
+    if (ok) {
       toast.success('Deleted');
       load();
     } else {
-      toast.error('Failed to delete.');
+      toast.error(data.error || 'Failed to delete.');
     }
   }
 
