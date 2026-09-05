@@ -21,8 +21,14 @@ export default function ImageUploader({
       const formData = new FormData();
       formData.append('file', file);
       const res = await fetch('/api/upload', { method: 'POST', body: formData });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Upload failed');
+      const text = await res.text();
+      let data: any = {};
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        data = { error: text || `Upload failed with status ${res.status}` };
+      }
+      if (!res.ok) throw new Error(data.error || `Upload failed with status ${res.status}`);
       onChange(data.url);
       toast.success('Image uploaded');
     } catch (err) {
