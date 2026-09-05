@@ -16,25 +16,27 @@ export default function ImageUploader({
   const [uploading, setUploading] = useState(false);
 
   async function handleFile(file: File) {
+    if (file.size > 3 * 1024 * 1024) {
+      toast.error('Image size must be less than 3MB.');
+      return;
+    }
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await fetch('/api/upload', { method: 'POST', body: formData });
-      const text = await res.text();
-      let data: any = {};
-      try {
-        data = text ? JSON.parse(text) : {};
-      } catch {
-        data = { error: text || `Upload failed with status ${res.status}` };
-      }
-      if (!res.ok) throw new Error(data.error || `Upload failed with status ${res.status}`);
-      onChange(data.url);
-      toast.success('Image uploaded');
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const base64Url = reader.result as string;
+        onChange(base64Url);
+        setUploading(false);
+        toast.success('Image loaded successfully');
+      };
+      reader.onerror = () => {
+        setUploading(false);
+        toast.error('Failed to read image file.');
+      };
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Upload failed');
-    } finally {
       setUploading(false);
+      toast.error(err instanceof Error ? err.message : 'Upload failed');
     }
   }
 
