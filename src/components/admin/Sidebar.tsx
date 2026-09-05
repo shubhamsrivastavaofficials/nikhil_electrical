@@ -32,8 +32,7 @@ export default function Sidebar() {
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' });
     toast.success('Logged out');
-    router.push('/admin/login');
-    router.refresh();
+    window.location.href = '/admin/login';
   }
 
   return (
