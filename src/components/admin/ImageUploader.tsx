@@ -16,25 +16,58 @@ export default function ImageUploader({
   const [uploading, setUploading] = useState(false);
 
   async function handleFile(file: File) {
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File size must be less than 10MB.');
+      return;
+    }
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await fetch('/api/upload', { method: 'POST', body: formData });
-      const text = await res.text();
-      let data: any = {};
-      try {
-        data = text ? JSON.parse(text) : {};
-      } catch {
-        data = { error: text || `Upload failed with status ${res.status}` };
-      }
-      if (!res.ok) throw new Error(data.error || `Upload failed with status ${res.status}`);
-      onChange(data.url);
-      toast.success('Image uploaded');
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = document.createElement('img');
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height = Math.round((height * MAX_WIDTH) / width);
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width = Math.round((width * MAX_HEIGHT) / height);
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          onChange(dataUrl);
+          setUploading(false);
+          toast.success('Image loaded successfully');
+        };
+        img.onerror = () => {
+          setUploading(false);
+          toast.error('Failed to process image.');
+        };
+      };
+      reader.onerror = () => {
+        setUploading(false);
+        toast.error('Failed to read file.');
+      };
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Upload failed');
-    } finally {
       setUploading(false);
+      toast.error('Image processing failed.');
     }
   }
 
@@ -64,8 +97,30 @@ export default function ImageUploader({
           if (file) handleFile(file);
         }}
       />
-      <div className="mt-2 flex items-center gap-1.5 text-[11px] text-ink-700">
-        <ImageIcon className="h-3 w-3" /> JPG, PNG, WEBP up to 8MB
+      <div className="mt-2 flex items-center justify-between text-[11px] text-ink-700">
+        <span className="flex items-center gap-1.5"><ImageIcon className="h-3 w-3" /> JPG, PNG, WEBP</span>
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange('')}
+            className="text-red-400 hover:underline"
+          >
+            Remove image
+          </button>
+        )}
+      </div>
+      <div className="mt-2">
+        <input
+          type="text"
+          placeholder="Or paste image URL (https://...)"
+          value={value.startsWith('data:') ? '[Base64 Image Attached]' : value}
+          onChange={(e) => {
+            if (!e.target.value.startsWith('[Base64')) {
+              onChange(e.target.value);
+            }
+          }}
+          className="w-full rounded-lg border border-white/10 bg-base-900 px-3 py-2 text-xs text-ink-100 outline-none focus:border-volt-500"
+        />
       </div>
     </div>
   );
