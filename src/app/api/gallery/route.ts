@@ -21,16 +21,25 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { response } = await requireAdmin();
-  if (response) return response;
+  try {
+    const { response } = await requireAdmin();
+    if (response) return response;
 
-  const body = await req.json().catch(() => null);
-  const parsed = createSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    const body = await req.json().catch(() => null);
+    if (!body) {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+
+    const parsed = createSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    }
+
+    const result = await withDb(() => prisma.galleryImage.create({ data: parsed.data }));
+    if (!result.ok) return dbUnavailable();
+    return NextResponse.json({ image: result.data }, { status: 201 });
+  } catch (err: any) {
+    console.error('Gallery API POST Error:', err);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
-
-  const result = await withDb(() => prisma.galleryImage.create({ data: parsed.data }));
-  if (!result.ok) return dbUnavailable();
-  return NextResponse.json({ image: result.data }, { status: 201 });
 }
