@@ -5,6 +5,6 @@ import { z } from 'zod';
 export const imagePathSchema = z
   .string()
   .min(1)
-  .refine((val) => /^https?:\/\//.test(val) || val.startsWith('/'), {
-    message: 'Must be a valid URL or a path starting with /',
+  .refine((val) => /^https?:\/\//.test(val) || val.startsWith('/') || val.startsWith('data:image'), {
+    message: 'Must be a valid URL, a path starting with /, or a base64 Data URL',
   });

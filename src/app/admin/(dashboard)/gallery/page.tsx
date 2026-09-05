@@ -71,12 +71,22 @@ export default function AdminGalleryPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, altText: form.altText || form.title }),
       });
-      if (!res.ok) throw new Error();
+
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { error: `Failed to parse server response: ${text.substring(0, 100)}...` };
+      }
+
+      if (!res.ok) throw new Error(data.error || 'Failed to save image.');
       toast.success(editing ? 'Image updated' : 'Image added');
       setOpen(false);
       load();
-    } catch {
-      toast.error('Failed to save image.');
+    } catch (err: any) {
+      console.error('Gallery save error:', err);
+      toast.error(err.message || 'Failed to save image.');
     } finally {
       setSaving(false);
     }
@@ -150,6 +160,17 @@ export default function AdminGalleryPage() {
       <Modal open={open} onClose={() => setOpen(false)} title={editing ? 'Edit Image' : 'Add Image'}>
         <div className="space-y-4">
           <ImageUploader value={form.imageUrl} onChange={(url) => setForm({ ...form, imageUrl: url })} />
+          <div className="pt-2 border-t border-white/10">
+            <label className="mb-1.5 block text-xs font-medium text-ink-500">Or Paste Direct Image URL</label>
+            <input
+              type="text"
+              placeholder="https://images.unsplash.com/..."
+              value={form.imageUrl.startsWith('http') ? form.imageUrl : ''}
+              onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+              className="w-full rounded-lg border border-white/10 bg-base-900 px-4 py-2.5 text-sm text-ink-100 outline-none focus:border-volt-500"
+            />
+            <p className="mt-1 text-[10px] text-ink-600">Use this if image upload fails.</p>
+          </div>
           <div>
             <label className="mb-1.5 block text-xs font-medium text-ink-500">Title</label>
             <input
