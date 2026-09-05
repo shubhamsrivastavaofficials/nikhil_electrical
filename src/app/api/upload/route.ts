@@ -25,14 +25,8 @@ export async function POST(req: NextRequest) {
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-');
     const filename = `${Date.now()}-${safeName}`;
 
-    // Production: upload to Vercel Blob
-    if (process.env.NODE_ENV === 'production' || process.env.BLOB_READ_WRITE_TOKEN) {
-      if (!process.env.BLOB_READ_WRITE_TOKEN) {
-        return NextResponse.json(
-          { error: 'Vercel Blob token is missing. Please configure BLOB_READ_WRITE_TOKEN in Vercel environment variables.' },
-          { status: 500 }
-        );
-      }
+    // If Vercel Blob token is configured, use Vercel Blob
+    if (process.env.BLOB_READ_WRITE_TOKEN) {
       try {
         const { put } = await import('@vercel/blob');
         const blob = await put(`uploads/${filename}`, file, {
@@ -49,7 +43,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Local dev fallback: write to public/uploads
+    // If on production without Vercel Blob token configured
+    if (process.env.NODE_ENV === 'production') {
+      return NextResponse.json(
+        { error: 'Vercel Blob is not configured. Please add BLOB_READ_WRITE_TOKEN in your Vercel Project Settings -> Environment Variables (or connect Vercel Blob storage).' },
+        { status: 500 }
+      );
+    }
+
+    // Local development fallback: write to public/uploads
     const { writeFile, mkdir } = await import('fs/promises');
     const path = await import('path');
     const uploadDir = path.join(process.cwd(), 'public', 'uploads');
