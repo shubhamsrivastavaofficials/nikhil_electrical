@@ -27,8 +27,7 @@ export default function AdminLoginPage() {
         return;
       }
       toast.success('Welcome back!');
-      router.push('/admin');
-      router.refresh();
+      window.location.href = '/admin';
     } catch {
       toast.error('Something went wrong. Try again.');
     } finally {
