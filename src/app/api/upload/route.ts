@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   const filename = `${Date.now()}-${safeName}`;
 
   // Production: upload to Vercel Blob (set BLOB_READ_WRITE_TOKEN in env)
-  if (process.env.BLOB_READ_WRITE_TOKEN) {
+  if (process.env.NODE_ENV === 'production' && process.env.BLOB_READ_WRITE_TOKEN) {
     const { put } = await import('@vercel/blob');
     const blob = await put(`uploads/${filename}`, file, {
       access: 'public',
