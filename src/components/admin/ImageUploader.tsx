@@ -22,6 +22,32 @@ export default function ImageUploader({
     }
     setUploading(true);
     try {
+      // 1. Try uploading to /api/upload (Vercel Blob / Local storage)
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = {};
+      }
+
+      if (res.ok && data.url) {
+        onChange(data.url);
+        setUploading(false);
+        toast.success('Image uploaded successfully');
+        return;
+      }
+
+      // 2. Fallback: Client-side compression & Base64 Data URL if upload endpoint fails (e.g. Blob token missing)
+      console.warn('API upload failed, falling back to client-side compression:', data.error || text);
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = (event) => {
@@ -31,8 +57,8 @@ export default function ImageUploader({
           const canvas = document.createElement('canvas');
           let width = img.width;
           let height = img.height;
-          const MAX_WIDTH = 800;
-          const MAX_HEIGHT = 800;
+          const MAX_WIDTH = 600;
+          const MAX_HEIGHT = 600;
 
           if (width > height) {
             if (width > MAX_WIDTH) {
@@ -51,10 +77,10 @@ export default function ImageUploader({
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, width, height);
 
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
           onChange(dataUrl);
           setUploading(false);
-          toast.success('Image loaded successfully');
+          toast.success('Image processed successfully');
         };
         img.onerror = () => {
           setUploading(false);
@@ -65,9 +91,10 @@ export default function ImageUploader({
         setUploading(false);
         toast.error('Failed to read file.');
       };
-    } catch (err) {
+    } catch (err: any) {
+      console.error('Image handling error:', err);
       setUploading(false);
-      toast.error('Image processing failed.');
+      toast.error('Image upload failed. Try pasting an image URL.');
     }
   }
 
@@ -113,7 +140,7 @@ export default function ImageUploader({
         <input
           type="text"
           placeholder="Or paste image URL (https://...)"
-          value={value.startsWith('data:') ? '[Base64 Image Attached]' : value}
+          value={value.startsWith('data:') ? '[Base64 Compressed Image Attached]' : value}
           onChange={(e) => {
             if (!e.target.value.startsWith('[Base64')) {
               onChange(e.target.value);
