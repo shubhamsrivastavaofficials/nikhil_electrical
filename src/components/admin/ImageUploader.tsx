@@ -46,8 +46,15 @@ export default function ImageUploader({
         return;
       }
 
-      // 2. Fallback: Client-side compression & Base64 Data URL if upload endpoint fails (e.g. Blob token missing)
-      console.warn('API upload failed, falling back to client-side compression:', data.error || text);
+      // If we are here, it means the API returned an error (like 500)
+      console.warn('API upload failed, checking error:', data.error);
+      if (data.error && data.error.includes('Vercel Blob')) {
+        toast.error('Vercel Blob is not configured. Please paste a direct image URL instead.');
+      } else {
+        toast.error(data.error || 'Upload failed, falling back...');
+      }
+
+      // 2. Fallback: Client-side compression & Base64 Data URL
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = (event) => {
