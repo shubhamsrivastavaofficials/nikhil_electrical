@@ -163,7 +163,7 @@ export default function AdminGalleryPage() {
             <input
               type="text"
               placeholder="https://images.unsplash.com/..."
-              value={form.imageUrl && form.imageUrl.startsWith('http') ? form.imageUrl : ''}
+              value={form.imageUrl || ''}
               onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
               className="w-full rounded-lg border border-white/10 bg-base-900 px-4 py-2.5 text-sm text-ink-100 outline-none focus:border-volt-500"
             />
