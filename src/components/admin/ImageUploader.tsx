@@ -136,18 +136,16 @@ export default function ImageUploader({
           </button>
         )}
       </div>
-      <div className="mt-2">
+      <div className="mt-4 pt-4 border-t border-white/10">
+        <label className="mb-1.5 block text-xs font-medium text-ink-500">Or Paste Direct Image URL</label>
         <input
           type="text"
-          placeholder="Or paste image URL (https://...)"
-          value={value.startsWith('data:') ? '[Base64 Compressed Image Attached]' : value}
-          onChange={(e) => {
-            if (!e.target.value.startsWith('[Base64')) {
-              onChange(e.target.value);
-            }
-          }}
+          placeholder="https://images.unsplash.com/..."
+          value={value.startsWith('data:') ? '' : value}
+          onChange={(e) => onChange(e.target.value)}
           className="w-full rounded-lg border border-white/10 bg-base-900 px-3 py-2 text-xs text-ink-100 outline-none focus:border-volt-500"
         />
+        <p className="mt-1 text-[10px] text-ink-600">Use this if image upload fails.</p>
       </div>
     </div>
   );
