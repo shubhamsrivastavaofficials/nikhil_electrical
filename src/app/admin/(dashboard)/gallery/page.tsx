@@ -158,12 +158,12 @@ export default function AdminGalleryPage() {
       <Modal open={open} onClose={() => setOpen(false)} title={editing ? 'Edit Image' : 'Add Image'}>
         <div className="space-y-4">
           <ImageUploader value={form.imageUrl} onChange={(url) => setForm({ ...form, imageUrl: url })} />
-          <div className="pt-2 border-t border-white/10">
+          <div className="pt-2 border-t border-white/10" style={{ display: 'block' }}>
             <label className="mb-1.5 block text-xs font-medium text-ink-500">Or Paste Direct Image URL</label>
             <input
               type="text"
               placeholder="https://images.unsplash.com/..."
-              value={form.imageUrl.startsWith('http') ? form.imageUrl : ''}
+              value={form.imageUrl && form.imageUrl.startsWith('http') ? form.imageUrl : ''}
               onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
               className="w-full rounded-lg border border-white/10 bg-base-900 px-4 py-2.5 text-sm text-ink-100 outline-none focus:border-volt-500"
             />
